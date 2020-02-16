@@ -1,0 +1,9 @@
+#
+#	WiPi-Power Changelog
+#
+#
+
+Version  Date         Kernel    Changes
+=======  ====         ======    =======
+
+0.1      05-02-2020   4.14.71+  Beta Release
