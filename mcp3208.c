@@ -32,6 +32,17 @@
 #include "mcp3208.h"
 #include "errorcheck.h"
 /*
+ * mcp3208HighResolution:
+ *	Set the device to HR mode
+ *********************************************************************************
+ */
+static int mcp3208HRmode = TRUE;
+
+void mcp3208HighResolution(int HR) {
+    mcp3208HRmode = HR;
+}
+
+/*
  * myAnalogRead:
  *	Return the analog value of the given pin
  *********************************************************************************
@@ -40,17 +51,18 @@
 static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
 {
   unsigned char spiData [3] ;
-//  unsigned char chanBits ;
    int chan = pin - node->pinBase ;
 
-//  chanBits = 0b10000000 | (chan << 4) ;
-//  spiData [0] = 1;
-//  spiData [1] = 0b10000000 | chan << 4;
-//  spiData [2] = 0 ;
+  if (mcp3208HRmode) {
+	spiData [0] = 0b110 | chan >> 2 ;		// Start bit, single/diff, D2
+	spiData [1] = chan << 6;			// D1 & D0
+ 	spiData [2] = 0 ;
+  } else {
+	spiData [0] = 1;
+	spiData [1] = 0b10000000 | chan << 4;
+	spiData [2] = 0 ;
+  }
 
-  spiData [0] = 0b110 | chan >> 2 ;		// Start bit, single/diff, D2
-  spiData [1] = chan << 6;			// D1 & D0
-  spiData [2] = 0 ;
   wiringPiSPIDataRW (node->fd, spiData, 3) ;
 
   return ((spiData [1] << 8) | spiData [2]) & 0xFFF ;
@@ -76,5 +88,6 @@ int mcp3208Setup (const int pinBase, int spiChannel)
   node->fd         = spiChannel ;
   node->analogRead = myAnalogRead ;
 
+  mcp3208HighResolution(TRUE);
   return TRUE ;
 }

@@ -193,7 +193,7 @@ void signal_setup(void) {
 #define BASE	 100						// Analogue channel base
 #define CURRENT_SENSOR (BASE+0)					// location of current sensor input
 #define CHIPSET_SENSOR (BASE+7)					// location of input signaling chipset
-#define SAMPLE_PERIOD 20					// duration of sampling at least 1 cycle in 50Hz
+#define SAMPLE_PERIOD 40					// duration of sampling at least 1 cycle in 50Hz
 
 // System  Characteristics
 #define Vext		240.0					// Mains voltage
@@ -201,13 +201,14 @@ void signal_setup(void) {
 #define	ADCrange_10bit	1024					// 10 bit ADC range
 #define	ADCrange_12bit	4096					// 12 bit ADC range
 static int ADCrange = ADCrange_10bit;
+static int ADCadj = 0;
 // Sensor Charatcteristics
 #define	Iext		100.0					// External Max current
 #define Iint		0.050					// Internal Max current
 #define Rburden		22.0					// Burden resistor
 #define Vint		(Rburden*Iint)				// V=IR internal voltage scaled to fit range
 
-#define DEBIAS		(ADCrange/2)				// De-bias, zero point in range
+#define DEBIAS		((ADCrange/2)-ADCadj)			// De-bias, zero point in range
 #define ROOT2 		1.414					// Square root of 2
 #define FACTOR 		((Vref/ADCrange) * (Iext/Vint)* (Vext/1000.0)) // Conversion factor A0 -> kW
 
@@ -220,9 +221,11 @@ void	determine_chipset() {
 
     sample = analogRead(CHIPSET_SENSOR);			// Read from the chipset sensor
 
-    ADCrange = (sample > (ADCrange_10bit) ? ADCrange_12bit : ADCrange_10bit);
-    debug(DEBUG_ESSENTIAL,"Chipset %s, range %d set\n",
-				(ADCrange == ADCrange_12bit ? "MCP3208 12 bit" : "MCP3008 10 bit"), ADCrange);
+    ADCrange = (sample > (ADCrange_10bit) ? ADCrange_12bit : ADCrange_10bit); // Establish Range
+    mcp3208HighResolution(ADCrange == ADCrange_12bit);		// Set driver to corect mode
+    ADCadj = ADCrange - sample;
+    debug(DEBUG_ESSENTIAL,"Chipset %s, range %d, sample %d adj %d\n",
+				(ADCrange == ADCrange_12bit ? "MCP3208 12 bit" : "MCP3008 10 bit"), ADCrange, sample, ADCadj);
 }
 //
 //	Read Power Consumption by sampling nd looking for peak

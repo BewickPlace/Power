@@ -25,4 +25,4 @@
  */
 
 extern int mcp3208Setup (int pinBase, int spiChannel) ;
-
+extern void mcp3208HighResolution(int HR);
