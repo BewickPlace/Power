@@ -6,4 +6,5 @@
 Version  Date         Kernel    Changes
 =======  ====         ======    =======
 
+0.2      17-02-2020   4.14.71+  Beta Release with Sensor support
 0.1      05-02-2020   4.14.71+  Beta Release

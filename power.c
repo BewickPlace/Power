@@ -56,7 +56,7 @@ THE SOFTWARE.
     char	my_hostname[HOSTNAME_LEN];			// Local host name
     int 	power_shutdown = 0;				// Shutdown flag
 
-struct app 	app = {NULL, "./scripts/", NULL, 0, 0, 0};	// Application key data
+struct app 	app = {NULL, "./scripts/", NULL, 0, 0, 0, 100};	// Application key data
 
 void usage(char *progname) {
     printf("Usage: %s [options...]\n", progname);
@@ -68,6 +68,7 @@ void usage(char *progname) {
     printf("Options:\n");
     printf("    -h, --help          show this help\n");
 
+    printf("    -a, --amps          SCT013 Sensor external amp rating\n");
     printf("    -c, --config=DIR    Network Configuration file directory\n");
     printf("    -l, --log=FILE      redirect shairport's error output to FILE\n");
     printf("    -t, --track=DIR     specify Directory for tracking file (.csv)\n");
@@ -79,6 +80,7 @@ int parse_options(int argc, char **argv) {
 
     static struct option long_options[] = {
         {"help",    no_argument,        NULL, 'h'},
+	{"amps",    required_argument,  NULL, 'a'},
 
         {"config",  required_argument,  NULL, 'c'},
         {"log",     required_argument,  NULL, 'l'},
@@ -88,13 +90,16 @@ int parse_options(int argc, char **argv) {
     int opt;
 
     while ((opt = getopt_long(argc, argv,
-                              "+hmswbvc:l:t:",
+                              "+hvc:a:l:t:",
                               long_options, NULL)) > 0) {
         switch (opt) {
             default:
             case 'h':
                 usage(argv[0]);
                 exit(1);
+            case 'a':
+                app.sensor = atoi(optarg);;
+                break;
             case 'v':
                 debuglev++;
                 break;
@@ -200,20 +205,23 @@ void signal_setup(void) {
 #define	Vref		3.3					// System reference voltage
 #define	ADCrange_10bit	1024					// 10 bit ADC range
 #define	ADCrange_12bit	4096					// 12 bit ADC range
+
 static int ADCrange = ADCrange_10bit;
 static int ADCadj = 0;
-// Sensor Charatcteristics
-#define	Iext		100.0					// External Max current
-#define Iint		0.050					// Internal Max current
-#define Rburden		22.0					// Burden resistor
-#define Vint		(Rburden*Iint)				// V=IR internal voltage scaled to fit range
 
-#define DEBIAS		((ADCrange/2)-ADCadj)			// De-bias, zero point in range
-#define ROOT2 		1.414					// Square root of 2
-#define FACTOR 		((Vref/ADCrange) * (Iext/Vint)* (Vext/1000.0)) // Conversion factor A0 -> kW
+#define DEBIAS		((ADCrange/2)-ADCadj)			// De-bias, zero point in adjusted range
+// Sensor Charatcteristics
+//
+//	Conversion factor A0 -> kW
+//	((Vref/ADCrange) * (Iext/Vint) * (Vext/1000.0))
+//
+#define FACTOR_100amp	((Vref/ADCrange) * (100.0/(0.05*22)) * (Vext/1000.0)) // SCT013-000 100amp, V=IR 50ma 20ohm burden resistor
+#define FACTOR_20amp	((Vref/ADCrange) * (20.0 /1.1) * (Vext/1000.0))       // SCT013-020 20amp, 1v
+static double factor = 0;
+#define FACTOR 		factor					// Conversion factor A0 -> kW sensor specific
 
 //
-//	Determine Chipset
+//	Determine Chipset & Sensor
 //
 
 void	determine_chipset() {
@@ -226,6 +234,19 @@ void	determine_chipset() {
     ADCadj = ADCrange - sample;
     debug(DEBUG_ESSENTIAL,"Chipset %s, range %d, sample %d adj %d\n",
 				(ADCrange == ADCrange_12bit ? "MCP3208 12 bit" : "MCP3008 10 bit"), ADCrange, sample, ADCadj);
+    switch(app.sensor) {
+    case 100:
+	FACTOR = FACTOR_100amp;
+	debug(DEBUG_ESSENTIAL, "Sensor set to 100amp\n");
+	break;
+    case 20:
+	FACTOR = FACTOR_20amp;
+	debug(DEBUG_ESSENTIAL, "Sensor set to 20amp\n");
+	break;
+    default:
+	FACTOR = FACTOR_100amp;
+	debug(DEBUG_ESSENTIAL, "Invalid sensor configution defaulting to 100Amp\n");
+    }
 }
 //
 //	Read Power Consumption by sampling nd looking for peak
@@ -247,18 +268,11 @@ double read_powerconsumption() {
 	count++;
 	sample = analogRead(CURRENT_SENSOR);			// Read from the sensor - biased V
 
-//	Vpeak = (Vpeak > sample ? Vpeak : sample);		// maintain peak
-//	Vlow = (Vlow < sample ? Vlow : sample);			// maintain low
-
 	Sdebias = sample - DEBIAS;				// De-bias
 	squares = squares + (Sdebias*Sdebias);			// First part of RMS calculation
 //	debug(DEBUG_ESSENTIAL, "Sampling... %4d:%4d\n", sample, Sdebias);
 	delay(1);
     }
-
-//    Vdebias = (Vpeak - Vlow)/2;					// De-bias signal and convert to power
-//    Vdebias = Vdebias / ROOT2;					// Translate Vpeak to Vrms
-//    power_consumption = Vdebias * FACTOR;
 
     Srms = sqrt((double)squares/(double)count);				// 2nd part of RMS calculation
     Vrms = Srms * (Vref/ADCrange);

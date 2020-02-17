@@ -124,6 +124,10 @@ require 'manage_menu.php';
 	updatetxpower(test_input($_POST["txpower"]));
 	$changesmade = TRUE;
     }
+    if(isset($_POST['sensortype'])) {
+	updateWiPisensor(test_input($_POST["sensortype"]));
+	$changesmade = TRUE;
+    }
   }
   $numberofnetworks = count($networks)/3;
   $hostIPaddress = $_SERVER['SERVER_ADDR'];
@@ -218,6 +222,30 @@ require 'manage_menu.php';
 	<p>
 	<form  method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" autocomplete="off">
 	Radio TX Power:            <input type="text" name="txpower"  Value= <?php echo $txpower?> size="2" maxlength="2" pattern="[0-9]+" required title ="Numeric only" onchange="this.form.submit()"> <br>
+	<input type="hidden" name="menuselect" value=<?php echo $menu_mode ?>>
+	</form>
+        </p>
+     <?php
+   	$sensortype = getWiPIsensor();
+	switch($sensortype) {
+	case "-a100":
+	    $a100 = "checked";
+	    $a20 = "unchecked";
+	    break;
+	case "-a20":
+	    $a100 = "unchecked";
+	    $a20 = "checked";
+	    break;
+	default:
+	    $a100 = "checked";
+	    $a20 = "unchecked";
+	}
+	echo "Sensor Selection:";
+  ?>
+	</form>
+	<form  method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" autocomplete="off">
+	CT013-000 100Amp: <input type="radio" name="sensortype"  value="-a100" <?php echo $a100?> onchange="this.form.submit()"> <br>
+	CT013-020 020Amp: <input type="radio" name="sensortype"  value="-a20"  <?php echo $a20?> onchange="this.form.submit()"> <br>
 	<input type="hidden" name="menuselect" value=<?php echo $menu_mode ?>>
 	</form>
         </p>

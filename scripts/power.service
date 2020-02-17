@@ -5,7 +5,7 @@ After=bluetooth.target
 
 [Service]
 EnvironmentFile=/etc/power.conf
-ExecStart=/usr/local/bin/power $DEBUG --config $CONFDIR --log $LOGFILE --track $TRACKDIR
+ExecStart=/usr/local/bin/power $SENSOR $DEBUG --config $CONFDIR --log $LOGFILE --track $TRACKDIR
 User=root
 Group=root
 

@@ -26,6 +26,7 @@ struct app {					// Application key Data
     float	power;				// Summed power in a period
     int		count;				// Count ofvalue registered in period
     float	daily_power;			// Summed power in a day
+    int		sensor;				// Sensor
     };
 
 extern int power_shutdown;			// Signal heat shutdown between threads

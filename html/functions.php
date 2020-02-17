@@ -62,6 +62,10 @@ function updateWiPidebug($name){return updateWiPi('DEBUG=',$name);}
 function updateWiPiopmode($name){return updateWiPi('MODE=',$name);}
 function updateWiPibluetooth($name){return updateWiPi('BLUE=',$name);}
 
+function getWiPisensor() {return getWiPi('SENSOR=');}
+function updateWiPisensor($name){return updateWiPi('SENSOR=',$name);}
+
+
 function getNetwork($primekey)
 {
 $WiPiHeatfile = '/etc/network/interfaces';
