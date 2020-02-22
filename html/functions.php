@@ -65,6 +65,9 @@ function updateWiPibluetooth($name){return updateWiPi('BLUE=',$name);}
 function getWiPisensor() {return getWiPi('SENSOR=');}
 function updateWiPisensor($name){return updateWiPi('SENSOR=',$name);}
 
+function getWiPiresolution() {return getWiPi('RES=');}
+function updateWiPiresolution($name){return updateWiPi('RES=',$name);}
+
 
 function getNetwork($primekey)
 {

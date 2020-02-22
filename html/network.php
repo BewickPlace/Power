@@ -128,6 +128,10 @@ require 'manage_menu.php';
 	updateWiPisensor(test_input($_POST["sensortype"]));
 	$changesmade = TRUE;
     }
+    if(isset($_POST['resolution'])) {
+	updateWiPiresolution(test_input($_POST["resolution"]));
+	$changesmade = TRUE;
+    }
   }
   $numberofnetworks = count($networks)/3;
   $hostIPaddress = $_SERVER['SERVER_ADDR'];
@@ -246,6 +250,30 @@ require 'manage_menu.php';
 	<form  method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" autocomplete="off">
 	CT013-000 100Amp: <input type="radio" name="sensortype"  value="-a100" <?php echo $a100?> onchange="this.form.submit()"> <br>
 	CT013-020 020Amp: <input type="radio" name="sensortype"  value="-a20"  <?php echo $a20?> onchange="this.form.submit()"> <br>
+	<input type="hidden" name="menuselect" value=<?php echo $menu_mode ?>>
+	</form>
+        </p>
+     <?php
+   	$resolution = getWiPIresolution();
+	switch($resolution) {
+	case "-rHIGH":
+	    $high = "checked";
+	    $norm = "unchecked";
+	    break;
+	case "-rNORM":
+	    $high = "unchecked";
+	    $norm = "checked";
+	    break;
+	default:
+	    $high = "unchecked";
+	    $norm = "checked";
+	}
+	echo "Device resolution:";
+  ?>
+	</form>
+	<form  method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" autocomplete="off">
+	High Resolution : <input type="radio" name="resolution"  value="-rHIGH" <?php echo $high?> onchange="this.form.submit()"> <br>
+	Norm Resolution:  <input type="radio" name="resolution"  value="-rLOW"  <?php echo $norm?> onchange="this.form.submit()"> <br>
 	<input type="hidden" name="menuselect" value=<?php echo $menu_mode ?>>
 	</form>
         </p>
