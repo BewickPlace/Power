@@ -45,8 +45,8 @@ THE SOFTWARE.
 #include "power.h"
 #include "application.h"
 
-void	midnight_processing();
-void	perform_daily_log();
+void	midnight_processing(struct tm *info);
+void	perform_daily_log(struct tm *info);
 
 //
 //	Perform Power Logging
@@ -66,8 +66,6 @@ void	perform_logging() {
     debug(DEBUG_TRACE, "Performing logging at %d:%d:%d\n", info->tm_hour, info->tm_min, info->tm_sec);
 
     if (app.trackdir == NULL) { goto EndError; }	// Do NOT log is directory not specified
-    seconds = time(NULL);				// get the time
-    info = localtime(&seconds);				// convert into strctured time
     sprintf(logfile,"%s%s_%04d-%02d-%02d.csv", app.trackdir, MY_NAME, info->tm_year + 1900, info->tm_mon + 1, info->tm_mday);
     ERRORCHECK( strlen(logfile) > sizeof(logfile), "Tracking filename too long", TrackError);
 
@@ -89,7 +87,7 @@ void	perform_logging() {
     app.count = 0;
     fclose(log);
 
-    midnight_processing();				// Perform End/Start of Day Processing if appropriate
+    midnight_processing(info);				// Perform End/Start of Day Processing if appropriate
 
 ERRORBLOCK(TrackError);
     debug(DEBUG_ESSENTIAL, "Size: %d:%d %s\n", strlen(logfile), sizeof(logfile), logfile);
@@ -102,20 +100,15 @@ ENDERROR;
 //
 //	Midnight processing
 //
-void	midnight_processing() {
+void	midnight_processing(struct tm *info) {
     char 	logfile[50];			// Log file
-    time_t	seconds;
-    struct tm	*info;
     int		day, month, year;
     int		i;
-
-    seconds = time(NULL);				// get the time
-    info = localtime(&seconds);				// convert into strctured time
 
     if ((info->tm_hour == 23) && (info->tm_min >= 55)){	// if Last log interval before Midnight
 	debug(DEBUG_TRACE, "Pre-Midnight precessing....\n");
 
-	perform_daily_log();				// Record key daily summary
+	perform_daily_log(info);			// Record key daily summary
     }
 
     if (!((info->tm_hour == 0) && (info->tm_min == 0))) return;	// Exit if not Midnight
@@ -139,17 +132,13 @@ ENDERROR;
 //
 //	Perform Daily Logging
 //
-void	perform_daily_log() {
+void	perform_daily_log(struct tm *info) {
     char 	logfile[50];			// Log file
-    time_t	seconds;
-    struct tm	*info;
     FILE	*log;
     int	exists = 0;
 
     if (app.trackdir == NULL) { goto EndError; }	// Do NOT log if directory not specified
 
-    seconds = time(NULL);				// get the time
-    info = localtime(&seconds);				// convert into strctured time
     sprintf(logfile,"%s%s_%04d.csv", app.trackdir, MY_NAME, info->tm_year + 1900);
     ERRORCHECK( strlen(logfile) > sizeof(logfile), "Tracking filename too long", TrackError);
 

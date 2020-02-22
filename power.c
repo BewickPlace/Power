@@ -198,7 +198,7 @@ void signal_setup(void) {
 #define BASE	 100						// Analogue channel base
 #define CURRENT_SENSOR (BASE+0)					// location of current sensor input
 #define CHIPSET_SENSOR (BASE+7)					// location of input signaling chipset
-#define SAMPLE_PERIOD 40					// duration of sampling at least 1 cycle in 50Hz
+#define SAMPLE_PERIOD 20					// duration of sampling at least 1 cycle in 50Hz
 
 // System  Characteristics
 #define Vext		240.0					// Mains voltage
@@ -271,7 +271,7 @@ double read_powerconsumption() {
 	Sdebias = sample - DEBIAS;				// De-bias
 	squares = squares + (Sdebias*Sdebias);			// First part of RMS calculation
 //	debug(DEBUG_ESSENTIAL, "Sampling... %4d:%4d\n", sample, Sdebias);
-	delay(1);
+	delayMicroseconds(200);
     }
 
     Srms = sqrt((double)squares/(double)count);				// 2nd part of RMS calculation
@@ -302,9 +302,7 @@ int main(int argc, char **argv) {
 
     rc = wiringPiSetupPhys();					// Initialise WiringPi
     ERRORCHECK( rc < 0, "Power node failed to initialise (WiringPi)", EndError);
-    rc = wiringPiSPISetup(0, 32000000);				// Setup the SPI
-    ERRORCHECK( rc < 0, "Power node failed to initialise (SPI)", EndError);
-    rc = mcp3208Setup(BASE,SPI_CHAN);				// and MCP3208 ADC
+    rc = mcp3208Setup(BASE, SPI_CHAN);				// and MCP3208 ADC
     ERRORCHECK( rc < 0, "Power node failed to initialise (MCP3008)", EndError);
 
     debug(DEBUG_ESSENTIAL, "Power node starting...\n");
@@ -315,13 +313,17 @@ int main(int argc, char **argv) {
     while (!power_shutdown) {					// While NOT shutdown
 	delay((5+2-(time(NULL)%5))*1000);			// sample every 5 seconds, aligned to 2
 
-	power = read_powerconsumption();			// Read the sensor - kWatts
-	app.power = app.power  + power;				// Maintain running total (for this logging period) kWh
-	app.count++;
+	if(debuglev < DEBUG_DETAIL) {
+	    power = read_powerconsumption();			// Read the sensor - kWatts
+	    app.power = app.power  + power;			// Maintain running total (for this logging period) kWh
+	    app.count++;
+	    perform_logging();					// Perform logging if appropriate
 
-	debug(DEBUG_TRACE, "Value read from sensor %3.3f kW, total[%3.3f kW]\n", power, app.power);
-
-	perform_logging();					// Perform logging if appropriate
+	} else {	// Operate in TEST Mode
+	    power = read_powerconsumption();			// Read the sensor - kWatts
+	    debug(DEBUG_TRACE, "Value read %3.3f kW, Sample %4.1f Vrms % \n", 
+					power, power/FACTOR, (power/FACTOR)/(Vref/ADCrange));
+	}
     }
 
 ENDERROR;
