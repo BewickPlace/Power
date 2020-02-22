@@ -80,7 +80,7 @@ int mcp3208Setup (const int pinBase, int spiChannel)
 {
   struct wiringPiNodeStruct *node ;
 
-  if (wiringPiSPISetup (spiChannel, 1000000) < 0)
+  if (wiringPiSPISetup (spiChannel, 100000) < 0)
     return FALSE ;
 
   node = wiringPiNewNode (pinBase, 8) ;
@@ -88,6 +88,5 @@ int mcp3208Setup (const int pinBase, int spiChannel)
   node->fd         = spiChannel ;
   node->analogRead = myAnalogRead ;
 
-  mcp3208HighResolution(TRUE);
   return TRUE ;
 }
