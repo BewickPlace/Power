@@ -56,6 +56,12 @@ THE SOFTWARE.
     char	my_hostname[HOSTNAME_LEN];			// Local host name
     int 	power_shutdown = 0;				// Shutdown flag
 
+#define	ADCrange_10bit	1024					// 10 bit ADC range
+#define	ADCrange_12bit	4096					// 12 bit ADC range
+
+static int ADCrange = ADCrange_10bit;
+static int ADCadj = 0;
+
 struct app 	app = {NULL, "./scripts/", NULL, 0, 0, 0, 100};	// Application key data
 
 void usage(char *progname) {
@@ -69,6 +75,7 @@ void usage(char *progname) {
     printf("    -h, --help          show this help\n");
 
     printf("    -a, --amps          SCT013 Sensor external amp rating\n");
+    printf("    -r, --resolution    High/NORM resolution (12bit/10bit)\n");
     printf("    -c, --config=DIR    Network Configuration file directory\n");
     printf("    -l, --log=FILE      redirect shairport's error output to FILE\n");
     printf("    -t, --track=DIR     specify Directory for tracking file (.csv)\n");
@@ -81,6 +88,7 @@ int parse_options(int argc, char **argv) {
     static struct option long_options[] = {
         {"help",    no_argument,        NULL, 'h'},
 	{"amps",    required_argument,  NULL, 'a'},
+	{"resolution", required_argument,  NULL, 'r'},
 
         {"config",  required_argument,  NULL, 'c'},
         {"log",     required_argument,  NULL, 'l'},
@@ -90,7 +98,7 @@ int parse_options(int argc, char **argv) {
     int opt;
 
     while ((opt = getopt_long(argc, argv,
-                              "+hvc:a:l:t:",
+                              "+hva:r:c:l:t:",
                               long_options, NULL)) > 0) {
         switch (opt) {
             default:
@@ -99,6 +107,10 @@ int parse_options(int argc, char **argv) {
                 exit(1);
             case 'a':
                 app.sensor = atoi(optarg);;
+                break;
+            case 'r':
+		ADCrange = (strcmp(optarg, "HIGH")== 0 ? ADCrange_12bit : ADCrange_10bit);
+		mcp3208HighResolution(ADCrange == ADCrange_12bit);		// Set driver to corect mode
                 break;
             case 'v':
                 debuglev++;
@@ -203,13 +215,8 @@ void signal_setup(void) {
 // System  Characteristics
 #define Vext		240.0					// Mains voltage
 #define	Vref		3.3					// System reference voltage
-#define	ADCrange_10bit	1024					// 10 bit ADC range
-#define	ADCrange_12bit	4096					// 12 bit ADC range
 
-static int ADCrange = ADCrange_10bit;
-static int ADCadj = 0;
-
-#define DEBIAS		((ADCrange/2)-ADCadj)			// De-bias, zero point in adjusted range
+#define DEBIAS		((ADCrange-ADCadj)/2)			// De-bias, zero point in adjusted range
 // Sensor Charatcteristics
 //
 //	Conversion factor A0 -> kW
@@ -228,9 +235,6 @@ void	determine_chipset() {
     int sample = 0;
 
     sample = analogRead(CHIPSET_SENSOR);			// Read from the chipset sensor
-
-    ADCrange = (sample > (ADCrange_10bit) ? ADCrange_12bit : ADCrange_10bit); // Establish Range
-    mcp3208HighResolution(ADCrange == ADCrange_12bit);		// Set driver to corect mode
     ADCadj = ADCrange - sample;
     debug(DEBUG_ESSENTIAL,"Chipset %s, range %d, sample %d adj %d\n",
 				(ADCrange == ADCrange_12bit ? "MCP3208 12 bit" : "MCP3008 10 bit"), ADCrange, sample, ADCadj);
@@ -278,8 +282,7 @@ double read_powerconsumption() {
     Vrms = Srms * (Vref/ADCrange);
     power_consumption = Srms * FACTOR;
 
-//    debug(DEBUG_TRACE,"Sampling... %d samples in  %lums, Peak:%4lu:%4lu, De-biased:%4lu, Power:%2.3f\n", count, sample_stop - sample_start, Vpeak, Vlow, Vdebias, Vdebias * FACTOR);
-    debug(DEBUG_TRACE,"Sampling... %d samples in  %lums, Squares %6.0f, Srms %4.1f, Vrms:%1.3fmV, Power:%2.3fkW (%2.3f)\n", count, sample_stop - sample_start, squares, Srms, Vrms, power_consumption, FACTOR);
+    debug(DEBUG_TRACE,"Sampling... %d samples in  %lums, Squares %7.0f, Srms %4.1f, Vrms:%1.3fV, Power:%2.3fkW (%2.3f)\n", count, sample_stop - sample_start, squares, Srms, Vrms, power_consumption, FACTOR);
 
     return(power_consumption);
 }
@@ -313,17 +316,10 @@ int main(int argc, char **argv) {
     while (!power_shutdown) {					// While NOT shutdown
 	delay((5+2-(time(NULL)%5))*1000);			// sample every 5 seconds, aligned to 2
 
-	if(debuglev < DEBUG_DETAIL) {
-	    power = read_powerconsumption();			// Read the sensor - kWatts
-	    app.power = app.power  + power;			// Maintain running total (for this logging period) kWh
-	    app.count++;
-	    perform_logging();					// Perform logging if appropriate
-
-	} else {	// Operate in TEST Mode
-	    power = read_powerconsumption();			// Read the sensor - kWatts
-	    debug(DEBUG_TRACE, "Value read %3.3f kW, Sample %4.1f Vrms % \n", 
-					power, power/FACTOR, (power/FACTOR)/(Vref/ADCrange));
-	}
+	power = read_powerconsumption();			// Read the sensor - kWatts
+	app.power = app.power  + power;				// Maintain running total (for this logging period) kWh
+	app.count++;
+	perform_logging();					// Perform logging if appropriate
     }
 
 ENDERROR;
