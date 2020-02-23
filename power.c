@@ -210,7 +210,7 @@ void signal_setup(void) {
 #define BASE	 100						// Analogue channel base
 #define CURRENT_SENSOR (BASE+0)					// location of current sensor input
 #define CHIPSET_SENSOR (BASE+7)					// location of input signaling chipset
-#define SAMPLE_PERIOD 20					// duration of sampling at least 1 cycle in 50Hz
+#define SAMPLE_PERIOD 40					// duration of sampling at least 1 cycle in 50Hz
 
 // System  Characteristics
 #define Vext		240.0					// Mains voltage
@@ -222,8 +222,8 @@ void signal_setup(void) {
 //	Conversion factor A0 -> kW
 //	((Vref/ADCrange) * (Iext/Vint) * (Vext/1000.0))
 //
-#define FACTOR_100amp	((Vref/ADCrange) * (100.0/(0.05*22)) * (Vext/1000.0)) // SCT013-000 100amp, V=IR 50ma 20ohm burden resistor
-#define FACTOR_20amp	((Vref/ADCrange) * (20.0 /1.1) * (Vext/1000.0))       // SCT013-020 20amp, 1v
+#define FACTOR_100amp	((Vref/ADCrange) * (100.0/(0.05*22)) * (Vext/1000.0)) // SCT013-000 100amp, V=IR 50ma 22ohm burden resistor
+#define FACTOR_20amp	((Vref/ADCrange) * (20.0 /1.0) * (Vext/1000.0))       // SCT013-020 20amp, 1v
 static double factor = 0;
 #define FACTOR 		factor					// Conversion factor A0 -> kW sensor specific
 
@@ -282,7 +282,7 @@ double read_powerconsumption() {
     Vrms = Srms * (Vref/ADCrange);
     power_consumption = Srms * FACTOR;
 
-    debug(DEBUG_TRACE,"Sampling... %d samples in  %lums, Squares %7.0f, Srms %4.1f, Vrms:%1.3fV, Power:%2.3fkW (%2.3f)\n", count, sample_stop - sample_start, squares, Srms, Vrms, power_consumption, FACTOR);
+    debug(DEBUG_TRACE,"Sampling... %d samples in %lums, Squares %7.0f, Srms %4.1f, Vrms:%1.3fV, Power:%2.3fkW (%2.3f)\n", count, sample_stop - sample_start, squares, Srms, Vrms, power_consumption, FACTOR);
 
     return(power_consumption);
 }
