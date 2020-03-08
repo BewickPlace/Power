@@ -62,7 +62,7 @@ void	perform_logging() {
     info = localtime(&seconds);				// convert into strctured time
 
     if (info->tm_min % 5 > 0) { goto EndError; }	// Perform Logging on 5 minute interval
-    if (info->tm_sec > 5) { goto EndError; }		// in first 5 seconds
+    if (info->tm_sec > 0) { goto EndError; }		// in first second
     debug(DEBUG_TRACE, "Performing logging at %d:%d:%d\n", info->tm_hour, info->tm_min, info->tm_sec);
 
     if (app.trackdir == NULL) { goto EndError; }	// Do NOT log is directory not specified

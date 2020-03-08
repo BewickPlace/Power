@@ -36,7 +36,7 @@ THE SOFTWARE.
 #include <unistd.h>
 #include <signal.h>
 #include <math.h>
-//#include <sys/time.h>
+#include <sys/time.h>
 //#include <time.h>
 //#include <sys/types.h>
 //#include <sys/socket.h>
@@ -60,7 +60,6 @@ THE SOFTWARE.
 #define	ADCrange_12bit	4096					// 12 bit ADC range
 
 static int ADCrange = ADCrange_10bit;
-static int ADCadj = 0;
 
 struct app 	app = {NULL, "./scripts/", NULL, 0, 0, 0, 100};	// Application key data
 
@@ -213,10 +212,10 @@ void signal_setup(void) {
 #define SAMPLE_PERIOD 40					// duration of sampling at least 1 cycle in 50Hz
 
 // System  Characteristics
-#define Vext		240.0					// Mains voltage
+#define Vext		230.0					// Mains voltage
 #define	Vref		3.3					// System reference voltage
 
-#define DEBIAS		((ADCrange-ADCadj)/2)			// De-bias, zero point in adjusted range
+#define DEBIAS		(ADCrange/2)				// De-bias, zero point in adjusted range
 // Sensor Charatcteristics
 //
 //	Conversion factor A0 -> kW
@@ -235,9 +234,8 @@ void	determine_chipset() {
     int sample = 0;
 
     sample = analogRead(CHIPSET_SENSOR);			// Read from the chipset sensor
-    ADCadj = ADCrange - sample;
-    debug(DEBUG_ESSENTIAL,"Chipset %s, range %d, sample %d adj %d\n",
-				(ADCrange == ADCrange_12bit ? "MCP3208 12 bit" : "MCP3008 10 bit"), ADCrange, sample, ADCadj);
+    debug(DEBUG_ESSENTIAL,"Chipset %s, range %d, sample %d\n",
+				(ADCrange == ADCrange_12bit ? "MCP3208 12 bit" : "MCP3008 10 bit"), ADCrange, sample);
     switch(app.sensor) {
     case 100:
 	FACTOR = FACTOR_100amp;
@@ -278,15 +276,15 @@ double read_powerconsumption() {
 	delayMicroseconds(200);
     }
 
-    Srms = sqrt((double)squares/(double)count);				// 2nd part of RMS calculation
+    Srms = sqrt((double)squares/(double)count);			// 2nd part of RMS calculation
     Vrms = Srms * (Vref/ADCrange);
-    power_consumption = Srms * FACTOR;
-
+    power_consumption = (Srms * FACTOR);			// Apply conversion factor
     debug(DEBUG_TRACE,"Sampling... %d samples in %lums, Squares %7.0f, Srms %4.1f, Vrms:%1.3fV, Power:%2.3fkW (%2.3f)\n", count, sample_stop - sample_start, squares, Srms, Vrms, power_consumption, FACTOR);
 
     return(power_consumption);
 }
 
+#define	CycleRate	5					// Measurement Cycle Rate (seconds)
 //
 //	Main procedure
 //
@@ -294,6 +292,8 @@ double read_powerconsumption() {
 int main(int argc, char **argv) {
     int		rc = 0;
     float 	power = 0;
+    struct timeval now;
+    int		milliseconds;
 
     signal_setup();						// Set up signal handling
     parse_options(argc, argv);					// Parse command line parameters
@@ -314,10 +314,12 @@ int main(int argc, char **argv) {
     load_power_usage();						// Load previous power data fromn log files
 
     while (!power_shutdown) {					// While NOT shutdown
-	delay((5+2-(time(NULL)%5))*1000);			// sample every 5 seconds, aligned to 2
-
+	gettimeofday(&now, NULL);				// Get time
+	milliseconds = ((CycleRate - (now.tv_sec % CycleRate))*1000) + 100; // Establish seconds to next boundary
+	milliseconds = milliseconds - (now.tv_usec / 1000);	// Establish ms to next second boundary + 100ms
+	delay(milliseconds);					// Sample on next second bouandary
 	power = read_powerconsumption();			// Read the sensor - kWatts
-	app.power = app.power  + power;				// Maintain running total (for this logging period) kWh
+	app.power = app.power  + power;				// Maintain running total (for this logging period) kW
 	app.count++;
 	perform_logging();					// Perform logging if appropriate
     }
