@@ -60,6 +60,7 @@ THE SOFTWARE.
 #define	ADCrange_12bit	4096					// 12 bit ADC range
 
 static int ADCrange = ADCrange_10bit;
+static double MeterCorrection = (0.0/1000.0);			// Meter Correction factor
 
 struct app 	app = {NULL, "./scripts/", NULL, 0, 0, 0, 100};	// Application key data
 
@@ -75,6 +76,7 @@ void usage(char *progname) {
 
     printf("    -a, --amps          SCT013 Sensor external amp rating\n");
     printf("    -r, --resolution    High/NORM resolution (12bit/10bit)\n");
+    printf("    -m, --meter         Meter Correction factor (watts)\n");
     printf("    -c, --config=DIR    Network Configuration file directory\n");
     printf("    -l, --log=FILE      redirect shairport's error output to FILE\n");
     printf("    -t, --track=DIR     specify Directory for tracking file (.csv)\n");
@@ -88,6 +90,7 @@ int parse_options(int argc, char **argv) {
         {"help",    no_argument,        NULL, 'h'},
 	{"amps",    required_argument,  NULL, 'a'},
 	{"resolution", required_argument,  NULL, 'r'},
+	{"meter", required_argument,  NULL, 'm'},
 
         {"config",  required_argument,  NULL, 'c'},
         {"log",     required_argument,  NULL, 'l'},
@@ -97,7 +100,7 @@ int parse_options(int argc, char **argv) {
     int opt;
 
     while ((opt = getopt_long(argc, argv,
-                              "+hva:r:c:l:t:",
+                              "+hva:r:m:c:l:t:",
                               long_options, NULL)) > 0) {
         switch (opt) {
             default:
@@ -105,11 +108,14 @@ int parse_options(int argc, char **argv) {
                 usage(argv[0]);
                 exit(1);
             case 'a':
-                app.sensor = atoi(optarg);;
+                app.sensor = atoi(optarg);
                 break;
             case 'r':
 		ADCrange = (strcmp(optarg, "HIGH")== 0 ? ADCrange_12bit : ADCrange_10bit);
 		mcp3208HighResolution(ADCrange == ADCrange_12bit);		// Set driver to corect mode
+                break;
+            case 'm':
+                MeterCorrection = (double)atoi(optarg)/1000.0;
                 break;
             case 'v':
                 debuglev++;
@@ -239,19 +245,19 @@ void	determine_chipset() {
     switch(app.sensor) {
     case 100:
 	FACTOR = FACTOR_100amp;
-	debug(DEBUG_ESSENTIAL, "Sensor set to 100amp\n");
+	debug(DEBUG_ESSENTIAL, "Sensor 100amp, Meter Correction %1.3fkW\n", MeterCorrection);
 	break;
     case 20:
 	FACTOR = FACTOR_20amp;
-	debug(DEBUG_ESSENTIAL, "Sensor set to 20amp\n");
+	debug(DEBUG_ESSENTIAL, "Sensor 20amp, Meter Correction %1.3fkW\n", MeterCorrection);
 	break;
     default:
 	FACTOR = FACTOR_100amp;
-	debug(DEBUG_ESSENTIAL, "Invalid sensor configution defaulting to 100Amp\n");
+	debug(DEBUG_ESSENTIAL, "Sensor default 100Amp, Meter Correction %1.3fkW\n", MeterCorrection);
     }
 }
 //
-//	Read Power Consumption by sampling nd looking for peak
+//	Read Power Consumption by sampling using RMS values
 //
 double read_powerconsumption() {
     int sample = 0;
@@ -278,7 +284,7 @@ double read_powerconsumption() {
 
     Srms = sqrt((double)squares/(double)count);			// 2nd part of RMS calculation
     Vrms = Srms * (Vref/ADCrange);
-    power_consumption = (Srms * FACTOR);			// Apply conversion factor
+    power_consumption = (Srms * FACTOR) - MeterCorrection;	// Apply conversion factor with correction
     debug(DEBUG_TRACE,"Sampling... %d samples in %lums, Squares %7.0f, Srms %4.1f, Vrms:%1.3fV, Power:%2.3fkW (%2.3f)\n", count, sample_stop - sample_start, squares, Srms, Vrms, power_consumption, FACTOR);
 
     return(power_consumption);

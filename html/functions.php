@@ -68,6 +68,9 @@ function updateWiPisensor($name){return updateWiPi('SENSOR=',$name);}
 function getWiPiresolution() {return getWiPi('RES=');}
 function updateWiPiresolution($name){return updateWiPi('RES=',$name);}
 
+function getWiPimeter() {return getWiPi('METER=');}
+function updateWiPimeter($name){return updateWiPi('METER=',$name);}
+
 
 function getNetwork($primekey)
 {

@@ -132,6 +132,10 @@ require 'manage_menu.php';
 	updateWiPiresolution(test_input($_POST["resolution"]));
 	$changesmade = TRUE;
     }
+    if(isset($_POST['meter'])) {
+	updateWiPimeter("-m".test_input($_POST["meter"]));
+	$changesmade = TRUE;
+    }
   }
   $numberofnetworks = count($networks)/3;
   $hostIPaddress = $_SERVER['SERVER_ADDR'];
@@ -274,6 +278,17 @@ require 'manage_menu.php';
 	<form  method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" autocomplete="off">
 	High Resolution : <input type="radio" name="resolution"  value="-rHIGH" <?php echo $high?> onchange="this.form.submit()"> <br>
 	Norm Resolution:  <input type="radio" name="resolution"  value="-rLOW"  <?php echo $norm?> onchange="this.form.submit()"> <br>
+	<input type="hidden" name="menuselect" value=<?php echo $menu_mode ?>>
+	</form>
+        </p>
+
+
+     <?php
+	$meter = substr(getWiPimeter(), 2);
+  ?>
+	<p>
+	<form  method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" autocomplete="off">
+	Meter Correction:            <input type="text" name="meter"  Value= <?php echo $meter?> size="2" maxlength="2" pattern="[0-9]+" required title ="Numeric only" onchange="this.form.submit()"> (watts)<br>
 	<input type="hidden" name="menuselect" value=<?php echo $menu_mode ?>>
 	</form>
         </p>
