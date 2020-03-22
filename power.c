@@ -115,7 +115,7 @@ int parse_options(int argc, char **argv) {
 		mcp3208HighResolution(ADCrange == ADCrange_12bit);		// Set driver to corect mode
                 break;
             case 'm':
-                MeterCorrection = (double)atoi(optarg)/1000.0;
+                MeterCorrection = atof(optarg)/1000.0;
                 break;
             case 'v':
                 debuglev++;
@@ -245,15 +245,15 @@ void	determine_chipset() {
     switch(app.sensor) {
     case 100:
 	FACTOR = FACTOR_100amp;
-	debug(DEBUG_ESSENTIAL, "Sensor 100amp, Meter Correction %1.3fkW\n", MeterCorrection);
+	debug(DEBUG_ESSENTIAL, "Sensor 100amp, Meter Correction %1.4fkW\n", MeterCorrection);
 	break;
     case 20:
 	FACTOR = FACTOR_20amp;
-	debug(DEBUG_ESSENTIAL, "Sensor 20amp, Meter Correction %1.3fkW\n", MeterCorrection);
+	debug(DEBUG_ESSENTIAL, "Sensor 20amp, Meter Correction %1.4fkW\n", MeterCorrection);
 	break;
     default:
 	FACTOR = FACTOR_100amp;
-	debug(DEBUG_ESSENTIAL, "Sensor default 100Amp, Meter Correction %1.3fkW\n", MeterCorrection);
+	debug(DEBUG_ESSENTIAL, "Sensor default 100Amp, Meter Correction %1.4fkW\n", MeterCorrection);
     }
 }
 //

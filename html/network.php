@@ -288,7 +288,7 @@ require 'manage_menu.php';
   ?>
 	<p>
 	<form  method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" autocomplete="off">
-	Meter Correction:            <input type="text" name="meter"  Value= <?php echo $meter?> size="2" maxlength="2" pattern="[0-9]+" required title ="Numeric only" onchange="this.form.submit()"> (watts)<br>
+	Meter Correction:            <input type="number" name="meter" step="0.1" min="0" max="50" Value= <?php echo $meter?> required title ="Numeric only" onchange="this.form.submit()"> (watts)<br>
 	<input type="hidden" name="menuselect" value=<?php echo $menu_mode ?>>
 	</form>
         </p>
