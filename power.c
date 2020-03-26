@@ -215,7 +215,7 @@ void signal_setup(void) {
 #define BASE	 100						// Analogue channel base
 #define CURRENT_SENSOR (BASE+0)					// location of current sensor input
 #define CHIPSET_SENSOR (BASE+7)					// location of input signaling chipset
-#define SAMPLE_PERIOD 40					// duration of sampling at least 1 cycle in 50Hz
+#define SAMPLE_PERIOD 20					// duration of sampling at least 1 cycle in 50Hz
 
 // System  Characteristics
 #define Vext		230.0					// Mains voltage
@@ -290,7 +290,7 @@ double read_powerconsumption() {
     return(power_consumption);
 }
 
-#define	CycleRate	5					// Measurement Cycle Rate (seconds)
+#define	CycleRate	1					// Measurement Cycle Rate (seconds)
 //
 //	Main procedure
 //
