@@ -122,7 +122,10 @@ function generate_monthly_power($node, $selected_date) {
 // Create the graph. These two calls are always required
     $graph = new Graph(1600,400);
     $graph->clearTheme();
-    $graph->SetScale("datint");
+//    $graph->SetScale("datint");
+    $graph->SetScale("intint", 0, 0, $xmin, $xmax );
+    $graph->yaxis->scale->SetAutoMin(0);
+
     $graph->yaxis->scale->SetAutoMin(0);
 
 //    $graph->SetClipping(TRUE);
