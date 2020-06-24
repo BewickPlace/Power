@@ -6,6 +6,7 @@
 <?php
 require 'html_functions.php';
 require 'functions.php';
+require 'graph.php';
 $hostname = getmyhostname();
 print("<title>".$hostname.": Electricity Monitoring System</title>");
 ?>
@@ -42,7 +43,19 @@ require 'manage_menu.php';
 	<?php echo $hostname ?>
     </div>
     <p>
-	Welcome to your WiPi-Power.
+	Welcome to your WiPi-Power. <br><br>
+<?php
+	$time = time();
+	$date = date('Y-m-d',$time);
+	$year = strtok($date, "-");
+	$month = strtok("-");
+
+	$hours_run = round(get_power_usage($hostname, $date, $status),1);
+	echo "Power usage so far today: ", $hours_run, "kWh<br>";
+
+	$hours_run = round(get_monthly_avg($hostname, $year, $month),1);
+	echo "Average usage this month: ", $hours_run, "Kwh<br><br>";
+?>
     </p>
 </div>
 <div>
