@@ -28,7 +28,7 @@ now = datetime.datetime.now()
 lastmonth = now.month
 
 #
-# Check Log Status & Putge key logs each month
+# Check Log Status & Putge key logs each month (no longer called)
 #
 def check_logstatus():
 	global lastmonth
@@ -86,7 +86,7 @@ def check_restart():
 	   os.system("sudo systemctl restart heat.service")
         if os.path.isfile('/var/www/restart.power-restart'):
 	   # restart power
-           logging.info('User requested Heat restart')
+           logging.info('User requested Power restart')
            try: os.remove('/var/www/restart.power-restart')
            except: pass
 	   os.system("sudo systemctl restart power.service")
@@ -185,13 +185,16 @@ try: os.remove('/var/www/restart.network-restart')
 except: pass
 try: os.remove('/var/www/restart.heat-restart')
 except: pass
-restartenabled = (not os.path.isfile('/var/www/restart.force-shutdown') and 
+try: os.remove('/var/www/restart.power-restart')
+except: pass
+restartenabled = (not os.path.isfile('/var/www/restart.force-shutdown') and
                   not os.path.isfile('/var/www/restart.force-restart') and
                   not os.path.isfile('/var/www/restart.network-restart') and
-                  not os.path.isfile('/var/www/restart.heat-restart'))
+                  not os.path.isfile('/var/www/restart.heat-restart') and
+                  not os.path.isfile('/var/www/restart.power-restart'))
 
 # Force /var/log permissions
-os.system("sudo chmod 777 /var/log")
+#os.system("sudo chmod 777 /var/log")
 # Create force disk check file
 # os.system("sudo touch /forcefsck")
 
@@ -201,7 +204,7 @@ while True:
 	if not shutdown: check_network()
 	if (not shutdown) and restartenabled: check_restart()
 
-	if not shutdown: check_logstatus()
+#	if not shutdown: check_logstatus()
 #	if GPIO.input(5):
 #		print("Input was HIGH")
 #	else:
